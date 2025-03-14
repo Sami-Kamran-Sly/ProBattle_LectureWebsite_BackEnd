@@ -12,11 +12,10 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    credentials: true,
-  })
-);
+app.use(cors({
+    origin: "https://pro-battle-lecture-website-front-dchy1xo4c.vercel.app",
+    credentials: true
+}));
 
 // Cloudinary Config
 cloudinary.config({
