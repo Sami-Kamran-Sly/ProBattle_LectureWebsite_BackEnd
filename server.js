@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-    origin: "https://pro-battle-lecture-website-front-dchy1xo4c.vercel.app",
+    origin: "https://pro-battle-lecture-website-front-end.vercel.app",
     credentials: true
 }));
 
