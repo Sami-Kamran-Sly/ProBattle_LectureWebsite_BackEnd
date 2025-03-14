@@ -33,20 +33,17 @@ app.get("/", (req, res) => {
   res.send("Server is running...");
 });
 
-const PORT = process.env.PORT || 5000;
-
 const start = async () => {
   try {
     await connectDBS(process.env.MONGO_URL);
+    let PORT = process.env.PORT || 5000;
     console.log("Connected to MongoDB Successfully");
     app.listen(PORT, () => console.log("Server Connected to the Port", PORT));
   } catch (error) {
-    console.error("Error connecting to the database:", error);
-    process.exit(1); // Force exit if DB connection fails
+    console.log(error);
   }
 };
 
-// Call start() once when the server initializes
-await start();
+start();
 
 export default app;
