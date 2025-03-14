@@ -46,7 +46,7 @@ const start = async () => {
   }
 };
 
-export default async (req, res) => {
-  await start();
-  return app(req, res);
-};
+// Call start() once when the server initializes
+await start();
+
+export default app;
