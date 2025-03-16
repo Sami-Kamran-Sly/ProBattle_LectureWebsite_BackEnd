@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const lectureSchema = new mongoose.Schema({
-  id: { type: String, required: true },
+  pdfIVid: { type: String, required: true },
   pdfUrl: { type: String, required: false }, // PDF URL
   imageUrl: { type: String, required: false }, // Image URL
   videoUrl: { type: String, required: false }, // Video URL

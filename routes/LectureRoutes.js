@@ -5,6 +5,7 @@ import { requireSignIn } from "../middleware/auth.js";
 
 import {
   lectureCreateController,
+  lectureDeleteController,
   lectureGetController,
   lectureGetSpecificController,
   uploadImageController,
@@ -25,6 +26,11 @@ const upload = multer({
 router
   .route("/uploadPDF")
   .post(requireSignIn, upload.single("pdf"), uploadPDFController);
+
+// router
+//   .route("/uploadPDF")
+//   .post(requireSignIn, upload.array("pdf", 10), uploadPDFController);
+
 router
   .route("/uploadImage")
   .post(requireSignIn, upload.single("image"), uploadImageController);
@@ -35,6 +41,9 @@ router
 router.route("/create").post(requireSignIn, lectureCreateController);
 router.route("/getAllLecture").get(requireSignIn, lectureGetController);
 router
-  .route("/getLecture/:id")
+  .route("/getLecture/:pdfIVid")
   .get(requireSignIn, lectureGetSpecificController);
+
+router.delete("/delete/:pdfIVid", requireSignIn, lectureDeleteController);
+
 export default router;

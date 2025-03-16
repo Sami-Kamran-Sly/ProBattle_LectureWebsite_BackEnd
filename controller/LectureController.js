@@ -118,6 +118,24 @@ export const uploadPDFController = async (req, res) => {
   }
 };
 
+// export const uploadPDFController = async (req, res) => {
+//   try {
+//     if (!req.files || req.files.length === 0) {
+//       return res.status(400).json({ error: "No files uploaded" });
+//     }
+
+//     // Upload all PDFs to Cloudinary
+//     const uploadedFiles = await Promise.all(
+//       req.files.map((file) => uploadFile(file, "raw"))
+//     );
+
+//     res.status(200).json({ success: true, pdfUrls: uploadedFiles });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "PDF upload failed" });
+//   }
+// };
+
 // Controller for video upload
 export const uploadVideoController = async (req, res) => {
   try {
@@ -136,7 +154,7 @@ export const uploadVideoController = async (req, res) => {
 export const lectureCreateController = async (req, res) => {
   try {
     const {
-      id,
+      pdfIVid,
       user,
       status,
       institute,
@@ -148,7 +166,7 @@ export const lectureCreateController = async (req, res) => {
     } = req.body;
 
     const lecture = new Lectures({
-      id,
+      pdfIVid,
       user,
       status,
       institute,
@@ -194,12 +212,13 @@ export const lectureGetController = async (req, res) => {
     res.status(500).json({ message: "Error fetching restaurant" });
   }
 };
+
 export const lectureGetSpecificController = async (req, res) => {
   try {
-    const { id } = req.params; // Lecture ID from URL params
+    const { pdfIVid } = req.params; // Lecture ID from URL params
 
     // Find lecture where _id matches and belongs to the user
-    const lecture = await Lectures.findOne({ id: id });
+    const lecture = await Lectures.findOne({ pdfIVid: pdfIVid });
 
     if (!lecture) {
       return res
@@ -211,6 +230,26 @@ export const lectureGetSpecificController = async (req, res) => {
   } catch (error) {
     console.error("Error fetching lecture:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const lectureDeleteController = async (req, res) => {
+  try {
+    const { pdfIVid } = req.params;
+
+    // If `pdfIVid` is a string and not an ObjectId, use findOneAndDelete
+    const lecture = await Lectures.findOneAndDelete({ pdfIVid });
+
+    if (!lecture) {
+      return res.status(404).json({ error: "Lecture not found" });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Lecture deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Lecture deletion failed" });
   }
 };
 
