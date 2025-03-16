@@ -13,10 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 // <<<<<<< HEAD
-app.use(cors({
+app.use(
+  cors({
     origin: "https://pro-battle-lecture-website-front-end.vercel.app",
-    credentials: true
-}));
+    credentials: true,
+  })
+);
 // =======
 // app.use(
 //   cors({
@@ -38,7 +40,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/lecture", lectureRoutes);
 
 app.get("/", (req, res) => {
-  res.send("Server is running...");
+  res.send("Server is running....");
 });
 
 const start = async () => {
