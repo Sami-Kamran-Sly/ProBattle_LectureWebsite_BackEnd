@@ -12,19 +12,19 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-<<<<<<< HEAD
+// <<<<<<< HEAD
 app.use(cors({
     origin: "https://pro-battle-lecture-website-front-end.vercel.app",
     credentials: true
 }));
-=======
-app.use(
-  cors({
-    // added url from the frontend vercelOne
-    credentials: true,
-  })
-);
->>>>>>> 48c8d61 (Lecture is created and can view Lecture delete your lecture now)
+// =======
+// app.use(
+//   cors({
+//     // added url from the frontend vercelOne
+//     credentials: true,
+//   })
+// );
+// >>>>>>> 48c8d61 (Lecture is created and can view Lecture delete your lecture now)
 
 // Cloudinary Config
 cloudinary.config({
