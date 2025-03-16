@@ -20,12 +20,12 @@ app.use(
   })
 );
 // =======
-// app.use(
-//   cors({
-//     // added url from the frontend vercelOne
-//     credentials: true,
-//   })
-// );
+app.use(
+  cors({
+    // added url from the frontend vercelOne
+    credentials: true,
+  })
+);
 // >>>>>>> 48c8d61 (Lecture is created and can view Lecture delete your lecture now)
 
 // Cloudinary Config
