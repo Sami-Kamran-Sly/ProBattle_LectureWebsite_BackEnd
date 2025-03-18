@@ -1,17 +1,15 @@
 import mongoose from "mongoose";
 
 const lectureSchema = new mongoose.Schema({
-  pdfIVid: { type: String, required: true },
-  pdfUrl: { type: String, required: false }, // PDF URL
-  imageUrl: { type: String, required: false }, // Image URL
-  videoUrl: { type: String, required: false }, // Video URL
-  // url: { type: String, required: true },
+  user: { type: mongoose.Schema.Types.ObjectId, required: true, ref: "users" },
+  pdfUrl: { type: String, required: false },
+  mulPdfUrls: [{ type: String }],
+  imageUrl: { type: String, required: false },
+  videoUrl: { type: String, required: false },
   status: { type: String, required: true },
   institute: { type: String, required: true },
   topic: { type: String, required: true },
   level: { type: String, required: true },
-  user: { type: String, required: true },
 });
-
 const Lectures = mongoose.model("LecturesModels", lectureSchema);
 export default Lectures;

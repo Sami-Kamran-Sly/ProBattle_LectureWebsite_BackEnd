@@ -8,7 +8,9 @@ import {
   lectureDeleteController,
   lectureGetController,
   lectureGetSpecificController,
+  lectureUpdateController,
   uploadImageController,
+  uploadMultiplePDFController,
   uploadPDFController,
   uploadVideoController,
 } from "../controller/LectureController.js";
@@ -26,6 +28,9 @@ const upload = multer({
 router
   .route("/uploadPDF")
   .post(requireSignIn, upload.single("pdf"), uploadPDFController);
+router
+  .route("/uploadMulPDF")
+  .post(requireSignIn, upload.array("mulpdf", 10), uploadMultiplePDFController);
 
 // router
 //   .route("/uploadPDF")
@@ -41,9 +46,10 @@ router
 router.route("/create").post(requireSignIn, lectureCreateController);
 router.route("/getAllLecture").get(requireSignIn, lectureGetController);
 router
-  .route("/getLecture/:pdfIVid")
+  .route("/getLecture/:id")
   .get(requireSignIn, lectureGetSpecificController);
+router.put("/update/:id", requireSignIn, lectureUpdateController);
 
-router.delete("/delete/:pdfIVid", requireSignIn, lectureDeleteController);
+router.delete("/delete/:id", requireSignIn, lectureDeleteController);
 
 export default router;

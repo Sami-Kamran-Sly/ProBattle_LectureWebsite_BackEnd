@@ -15,13 +15,6 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
-
-    credentials: true,
-  })
-);
-app.use(
-  cors({
-    // added url from the frontend vercelOne
     credentials: true,
   })
 );

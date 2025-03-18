@@ -1,6 +1,6 @@
 import cloudinary from "cloudinary";
 import Lectures from "../model/LectureSchema.js";
-
+import mongoose from "mongoose";
 // Function to upload an image to Cloudinary
 const uploadImage = async (file) => {
   const base64Image = Buffer.from(file.buffer).toString("base64");
@@ -9,48 +9,6 @@ const uploadImage = async (file) => {
   const uploadResponse = await cloudinary.v2.uploader.upload(dataURI);
   return uploadResponse.secure_url;
 };
-
-// const uploadFile = async (file, resourceType) => {
-//   try {
-//     console.log("File Buffer Length:", file.buffer.length);
-//     console.log("File MIME Type:", file.mimetype);
-
-//     if (resourceType === "raw") {
-//       const base64File = Buffer.from(file.buffer).toString("base64");
-//       const dataURI = `data:${file.mimetype};base64,${base64File}`;
-
-//       // Correct options to make PDFs viewable in browser
-//       const uploadResponse = await cloudinary.v2.uploader.upload(dataURI, {
-//         resource_type: "raw",
-//         // Remove the flags: "attachment" parameter as it forces download
-//         use_filename: true,
-//         delivery_type: "upload",
-//         access_mode: "public",
-//       });
-
-//       console.log("Cloudinary Upload Response:", uploadResponse);
-//       return uploadResponse.secure_url;
-//     } else if (resourceType === "video") {
-//       // Video upload code remains the same
-//       return new Promise((resolve, reject) => {
-//         const uploadStream = cloudinary.v2.uploader.upload_stream(
-//           { resource_type: "video" },
-//           (error, result) => {
-//             if (error) {
-//               console.error("Cloudinary Video Upload Error:", error);
-//               return reject(error);
-//             }
-//             resolve(result.secure_url);
-//           }
-//         );
-//         uploadStream.end(file.buffer);
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error Uploading File to Cloudinary:", error);
-//     throw error;
-//   }
-// };
 
 // Function to upload a file (PDF or Video) to Cloudinary Downloading the file explicitly
 const uploadFile = async (file, resourceType) => {
@@ -118,23 +76,25 @@ export const uploadPDFController = async (req, res) => {
   }
 };
 
-// export const uploadPDFController = async (req, res) => {
-//   try {
-//     if (!req.files || req.files.length === 0) {
-//       return res.status(400).json({ error: "No files uploaded" });
-//     }
+export const uploadMultiplePDFController = async (req, res) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
 
-//     // Upload all PDFs to Cloudinary
-//     const uploadedFiles = await Promise.all(
-//       req.files.map((file) => uploadFile(file, "raw"))
-//     );
+    // Upload all files and get their URLs
+    const mulPdfUrls = await Promise.all(
+      req.files.map(async (file) => {
+        return await uploadFile(file, "raw"); // Assuming `uploadFile` handles file uploads
+      })
+    );
 
-//     res.status(200).json({ success: true, pdfUrls: uploadedFiles });
-//   } catch (error) {
-//     console.error(error);
-//     res.status(500).json({ error: "PDF upload failed" });
-//   }
-// };
+    res.status(200).json({ success: true, mulPdfUrls });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "PDF upload failed" });
+  }
+};
 
 // Controller for video upload
 export const uploadVideoController = async (req, res) => {
@@ -153,77 +113,80 @@ export const uploadVideoController = async (req, res) => {
 
 export const lectureCreateController = async (req, res) => {
   try {
+    const userId = req.user._id;
+
     const {
-      pdfIVid,
-      user,
+      pdfUrl,
+      mulPdfUrls,
+      imageUrl,
+      videoUrl,
       status,
       institute,
       topic,
       level,
-      pdfUrl,
-      imageUrl,
-      videoUrl,
     } = req.body;
 
+    // Optional: Check for duplicate lectures (same topic and institute for the user)
+    const existingLecture = await Lectures.findOne({
+      user: userId,
+    });
+
+    if (existingLecture) {
+      return res.status(409).json({
+        message:
+          "Lecture with the same topic and institute already exists for this user",
+      });
+    }
+
     const lecture = new Lectures({
-      pdfIVid,
-      user,
+      user: userId, // Associate the lecture with the authenticated user
+      pdfUrl,
+      mulPdfUrls,
+      imageUrl,
+      videoUrl,
       status,
       institute,
       topic,
       level,
-      pdfUrl,
-      imageUrl,
-      videoUrl,
     });
 
-    if (req.file) {
-      // Determine file type and upload accordingly
-      if (req.file.mimetype.startsWith("image/")) {
-        lecture.imageUrl = await uploadImage(req.file);
-      } else if (req.file.mimetype === "application/pdf") {
-        lecture.pdfUrl = await uploadFile(req.file, "raw");
-      } else if (req.file.mimetype.startsWith("video/")) {
-        lecture.videoUrl = await uploadFile(req.file, "video");
-      } else {
-        return res.status(400).json({ error: "Invalid file type" });
-      }
-    }
-
     await lecture.save();
+
     res.status(201).json({ success: true, lecture });
   } catch (error) {
-    console.error(error);
+    console.error("Error creating lecture:", error);
     res.status(500).json({ error: "Lecture creation failed" });
   }
 };
-
 export const lectureGetController = async (req, res) => {
   try {
-    const lecture = await Lectures.find({});
+    // Fetch all lectures (no filtering by user)
+    const lectures = await Lectures.find();
 
-    if (!lecture) {
-      return res.status(404).json({ message: "Lecture not found" });
+    // If no lectures are found, return an appropriate response
+    if (!lectures || lectures.length === 0) {
+      return res.status(404).json({ message: "No lectures found" });
     }
 
-    res.status(200).json(lecture);
+    // Return the list of lectures
+    res.status(200).json({ success: true, lectures });
   } catch (error) {
-    console.log("error", error);
-    res.status(500).json({ message: "Error fetching restaurant" });
+    console.error("Error fetching lectures:", error);
+    res.status(500).json({ error: "Failed to retrieve lectures" });
   }
 };
 
 export const lectureGetSpecificController = async (req, res) => {
   try {
-    const { pdfIVid } = req.params; // Lecture ID from URL params
+    const { id } = req.params;
+    const userId = req.user._id;
 
-    // Find lecture where _id matches and belongs to the user
-    const lecture = await Lectures.findOne({ pdfIVid: pdfIVid });
+    const lecture = await Lectures.findOne({ _id: id, user: userId });
 
     if (!lecture) {
       return res
         .status(404)
-        .json({ message: "Lecture not found or does not belong to this user" });
+        .json({ message: "Lecture not found or access denied" });
     }
 
     res.status(200).json(lecture);
@@ -232,16 +195,48 @@ export const lectureGetSpecificController = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-export const lectureDeleteController = async (req, res) => {
+export const lectureUpdateController = async (req, res) => {
   try {
-    const { pdfIVid } = req.params;
+    const userId = req.user._id; // Logged-in user's ID
+    const lectureId = req.params.id; // Lecture ID from the URL
 
-    // If `pdfIVid` is a string and not an ObjectId, use findOneAndDelete
-    const lecture = await Lectures.findOneAndDelete({ pdfIVid });
+    // Find the lecture by ID
+    const lecture = await Lectures.findById(lectureId);
 
+    // Check if the lecture exists and if the logged-in user is the creator
     if (!lecture) {
       return res.status(404).json({ error: "Lecture not found" });
+    }
+    if (lecture.user.toString() !== userId.toString()) {
+      return res
+        .status(403)
+        .json({ error: "You are not authorized to edit this lecture" });
+    }
+
+    // Update the lecture
+    const updatedLecture = await Lectures.findByIdAndUpdate(
+      lectureId,
+      { $set: req.body }, // Update with the request body
+      { new: true } // Return the updated lecture
+    );
+
+    res.status(200).json({ success: true, lecture: updatedLecture });
+  } catch (error) {
+    console.error("Error updating lecture:", error);
+    res.status(500).json({ error: "Lecture update failed" });
+  }
+};
+export const lectureDeleteController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const lecture = await Lectures.findOneAndDelete({ _id: id, user: userId });
+
+    if (!lecture) {
+      return res
+        .status(404)
+        .json({ error: "Lecture not found or access denied" });
     }
 
     res
@@ -252,6 +247,48 @@ export const lectureDeleteController = async (req, res) => {
     res.status(500).json({ error: "Lecture deletion failed" });
   }
 };
+
+// const uploadFile = async (file, resourceType) => {
+//   try {
+//     console.log("File Buffer Length:", file.buffer.length);
+//     console.log("File MIME Type:", file.mimetype);
+
+//     if (resourceType === "raw") {
+//       const base64File = Buffer.from(file.buffer).toString("base64");
+//       const dataURI = `data:${file.mimetype};base64,${base64File}`;
+
+//       // Correct options to make PDFs viewable in browser
+//       const uploadResponse = await cloudinary.v2.uploader.upload(dataURI, {
+//         resource_type: "raw",
+//         // Remove the flags: "attachment" parameter as it forces download
+//         use_filename: true,
+//         delivery_type: "upload",
+//         access_mode: "public",
+//       });
+
+//       console.log("Cloudinary Upload Response:", uploadResponse);
+//       return uploadResponse.secure_url;
+//     } else if (resourceType === "video") {
+//       // Video upload code remains the same
+//       return new Promise((resolve, reject) => {
+//         const uploadStream = cloudinary.v2.uploader.upload_stream(
+//           { resource_type: "video" },
+//           (error, result) => {
+//             if (error) {
+//               console.error("Cloudinary Video Upload Error:", error);
+//               return reject(error);
+//             }
+//             resolve(result.secure_url);
+//           }
+//         );
+//         uploadStream.end(file.buffer);
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error Uploading File to Cloudinary:", error);
+//     throw error;
+//   }
+// };
 
 // const uploadFile = async (file, resourceType) => {
 //   if (resourceType === "raw") {
@@ -306,13 +343,54 @@ export const lectureDeleteController = async (req, res) => {
 
 // Controller for image upload
 
-// It only supports uploading one file at a time (either an image, PDF, or video).
-// router
-//   .route("/uploadPDF")
-//   .post(requireSignIn, upload.single("pdf"), uploadPDFController);
-// router
-//   .route("/uploadImage")
-//   .post(requireSignIn, upload.single("image"), uploadImageController);
-// router
-//   .route("/uploadVideo")
-//   .post(requireSignIn, upload.single("video"), uploadVideoController);
+// export const lectureUpdateController = async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const {
+//       pdfIVid,
+//       user,
+//       status,
+//       institute,
+//       topic,
+//       level,
+//       pdfUrl,
+//       imageUrl,
+//       videoUrl,
+//     } = req.body;
+
+//     const lecture = await Lectures.findOneAndUpdate(id);
+//     if (!lecture) {
+//       return res.status(404).json({ error: "Lecture not found" });
+//     }
+
+//     // Update only the fields provided in the request
+//     lecture.pdfIVid = pdfIVid ?? lecture.pdfIVid;
+//     lecture.user = user ?? lecture.user;
+//     lecture.status = status ?? lecture.status;
+//     lecture.institute = institute ?? lecture.institute;
+//     lecture.topic = topic ?? lecture.topic;
+//     lecture.level = level ?? lecture.level;
+//     lecture.pdfUrl = pdfUrl ?? lecture.pdfUrl;
+//     lecture.imageUrl = imageUrl ?? lecture.imageUrl;
+//     lecture.videoUrl = videoUrl ?? lecture.videoUrl;
+
+//     if (req.file) {
+//       // Determine file type and upload accordingly
+//       if (req.file.mimetype.startsWith("image/")) {
+//         lecture.imageUrl = await uploadImage(req.file);
+//       } else if (req.file.mimetype === "application/pdf") {
+//         lecture.pdfUrl = await uploadFile(req.file, "raw");
+//       } else if (req.file.mimetype.startsWith("video/")) {
+//         lecture.videoUrl = await uploadFile(req.file, "video");
+//       } else {
+//         return res.status(400).json({ error: "Invalid file type" });
+//       }
+//     }
+
+//     await lecture.save();
+//     res.status(200).json({ success: true, lecture });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ error: "Lecture update failed" });
+//   }
+// };
