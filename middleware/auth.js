@@ -13,7 +13,6 @@ export const requireSignIn = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Attach the decoded user information to the request object
-    console.log(decoded);
     req.user = decoded;
     next();
   } catch (error) {

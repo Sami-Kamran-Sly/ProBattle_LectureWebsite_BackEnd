@@ -189,12 +189,13 @@ export const lectureGetSpecificController = async (req, res) => {
         .json({ message: "Lecture not found or access denied" });
     }
 
-    res.status(200).json(lecture);
+    res.status(200).json({ lecture }); // ✅ wrap lecture in an object
   } catch (error) {
     console.error("Error fetching lecture:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
 export const lectureUpdateController = async (req, res) => {
   try {
     const userId = req.user._id; // Logged-in user's ID
