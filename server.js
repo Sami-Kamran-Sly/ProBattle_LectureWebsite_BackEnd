@@ -15,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   cors({
+       origin: ' https://pro-battle-lecture-website-front-end.vercel.app/',
     credentials: true,
   })
 );
